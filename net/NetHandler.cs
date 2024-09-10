@@ -40,6 +40,10 @@ public class NetHandler {
         if (settings.uP) {
             Console.WriteLine("Enter password");
             string pass = GetPass();
+            string transPass = "";
+            foreach(var cs in pass.ToArray()) {
+                transPass += "*";
+            }
             try {
                 return await (await new HttpClient(handler: new HttpClientHandler {
                     Proxy = new WebProxy {
@@ -54,11 +58,13 @@ public class NetHandler {
                 }, disposeHandler: true).GetAsync(uri)).Content.ReadAsStringAsync();
             } catch (HttpRequestException ex) {
                 Main.WriteLine($"[DEBUG] Failed to send Proxy Data to server: {settings.pURL}", ConsoleColor.Red);
+                Main.WriteLine($"[DEBUG] Failed with payload USER: {(settings.pN.Equals("%ENV_NAME%", StringComparison.CurrentCultureIgnoreCase) ? Environment.UserName : settings.pN)} | Pass: {transPass}", ConsoleColor.Red);
                 Main.WriteLine($"[DEBUG] {ex.Message}", ConsoleColor.Red);
                 Main.WriteLine("Invalid Password, try again", ConsoleColor.Red);
                 return await ScrapeWebSiteAsync(uri);
             } catch (InvalidOperationException ex) {
                 Main.WriteLine($"[DEBUG] Failed to send Proxy Data to server, due to invalid URI : {settings.pURL}", ConsoleColor.Red);
+                Main.WriteLine($"[DEBUG] Failed with payload USER: {(settings.pN.Equals("%ENV_NAME%", StringComparison.CurrentCultureIgnoreCase) ? Environment.UserName : settings.pN)} | Pass: {transPass}", ConsoleColor.Red);
                 Main.WriteLine($"[DEBUG] {ex.Message}", ConsoleColor.Red);
                 Main.WriteLine("Invalid Password, try again", ConsoleColor.Red);
                 return await ScrapeWebSiteAsync(uri);

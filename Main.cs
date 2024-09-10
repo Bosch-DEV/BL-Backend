@@ -1,4 +1,5 @@
 ﻿using LauncherBackEnd.config;
+using LauncherBackEnd.game;
 using LauncherBackEnd.net;
 using LauncherBackEnd.resolver;
 
@@ -12,8 +13,6 @@ public class Main {
 
     public bool isRunningProxy;
 
-    public List<DefaultResolver> resolvers;
-
     public string? ProxyHost { get; }
 
     internal Main() {
@@ -24,18 +23,13 @@ public class Main {
         isRunningProxy = proxyresult.UsingProxy;
         ProxyHost = proxyresult.Proxy;
         HandleProxy();
-        resolvers = [];
-        HandleResolver();
-        /*
-        LocalResolver lresolver = new LocalResolver();
-        if (lresolver.isValid) {
-            resolvers.Add(lresolver);
-        }
-        */
-
+        HandleAsyncTasks();
     }
 
     public async Task<bool> HandleAsyncTasks() {
+        await ResolverManager.GetInstance().RegisterAll();
+        GameHandler.GetInstance().ReloadGames();
+        /*
         try {
             await File.WriteAllTextAsync(Settings.resvPath.Replace("%ENV_PROGDATA%", Environment.SpecialFolder.ApplicationData.ToString()), (await NetHandler.GetInstance().ScrapeMasterResolver()).ToString());
             Console.WriteLine(await NetHandler.GetInstance().ScrapeMasterResolver());
@@ -45,18 +39,8 @@ public class Main {
             Main.WriteLine($"{ex.Message}", ConsoleColor.Red);
             return false;
         }
+        */
         return false;
-    }
-
-    public async void HandleResolver() {
-        bool success = await HandleAsyncTasks();
-        if (!success) return;
-        if (Settings.uP && isRunningProxy || !isRunningProxy) {
-            RemoteResolver rresolver = new RemoteResolver();
-            if (rresolver.isValid) {
-                resolvers.Add(rresolver);
-            }
-        }
     }
 
     public static Main GetInstance() => instance ?? new Main();
@@ -124,8 +108,6 @@ public class Main {
                 Runner.StopRunner();
                 return false;
             }
-            WriteBlank();
-            WriteBlock(70, "!", ConsoleColor.Red, addSpaceUnder: true);
         }
         return true;
     }

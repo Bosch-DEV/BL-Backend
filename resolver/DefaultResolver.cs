@@ -6,24 +6,34 @@ namespace LauncherBackEnd.resolver;
 public abstract class DefaultResolver {
 
     JObject? content;
+
+    public string id { get; }
     public bool isValid = true;
     public bool isNet { get; }
     public string path { get; }
 
     public Dictionary<string, GameResolverData> resolverData;
 
-    public DefaultResolver(string path, bool net = false) {
+    public DefaultResolver(string path, string id, bool net = false) {
         this.path = path.Replace("%ENV_PROGDATA%", Environment.SpecialFolder.ApplicationData.ToString());
+        this.id = id;
         this.isNet = net;
-        LoadGames();
+        resolverData = [];
+        Main.WriteLine(this.ToString() + " INIT");
+        if(!net && !File.Exists(path)) {
+            File.WriteAllText(this.path, "");
+        }
     }
 
     private async Task<bool> LoadContent() {
+        Main.WriteLine(this.ToString() + " LOAD CONTENT");
         if(isNet) {
+            Main.WriteLine(this.ToString() + " NET");
             content = await NetHandler.GetInstance().ScrapeWebsiteAsyncJS(path);
             return isValid = true;
         } else {
             try {
+                Main.WriteLine(this.ToString() + " NONET");
                 content = (JObject) JsonConvert.DeserializeObject(path);
                 return isValid = true;
             } catch(Exception ex) {
@@ -34,20 +44,28 @@ public abstract class DefaultResolver {
         }
     }
 
-    private async void LoadGames() {
+    public async Task<bool> LoadGames() {
         _ = await LoadContent();
-        if (!isValid) return;
-        foreach (var item in content) {
-            Main.WriteLine(item.ToString(), ConsoleColor.Yellow);
+        if (!isValid) {
+            return false;
         }
+        foreach (var item in content) {
+            JObject obj = item.Value.ToObject<JObject>();
+            resolverData.Add(item.Key, new GameResolverData(item.Key, obj.GetValue("exec").ToString(), obj.GetValue("data").ToString()));
+        }
+        return true;
     }
 
     //TODO: Fix these names
-    public class GameResolverData(string id, string x, string y) {
+    public class GameResolverData(string id, string execL, string resvL) {
 
         public string id { get; } = id;
-        public string x { get; } = x;
-        public string y { get; } = y;
+        public string execL { get; } = execL;
+        public string resvL { get; } = resvL;
+
+        public override string ToString() {
+            return $"ID: {id}, X: {execL}, Y: {resvL}";
+        }
     }
 
 }
