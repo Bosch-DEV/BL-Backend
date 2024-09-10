@@ -28,7 +28,7 @@ public class Settings {
     /* The Main Resolver URL
      * This resolver Contains the Games, and where there resolver.resv + .exe is located and is pulled from 
      */
-    public string resvURL { get; set; } = "https://raw.githubusercontent.com/Bosch-DEV/Battle-Launcher/master/resolver.resv";
+    public string resvURL { get; set; } = "https://raw.githubusercontent.com/Bosch-DEV/Bosch-Launcher/blob/master/resolver.resv";
     public string resvPath { get; set; } = "%ENV_PROGDATA%/BattleLauncher/remote.resv";
 
     /* Fallback Resolver URL

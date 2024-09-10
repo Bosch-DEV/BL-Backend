@@ -2,6 +2,7 @@
 using LauncherBackEnd.game;
 using LauncherBackEnd.net;
 using LauncherBackEnd.resolver;
+using System.Security;
 
 namespace LauncherBackEnd;
 
@@ -9,6 +10,9 @@ public class Main {
 
     private static Main? instance;
     private readonly SettingHandler settingHandler;
+    public SecureString pass = null;
+    public bool hasPinned = false;
+    public bool lastReqFail = true;
     public Settings Settings { get; }
 
     public bool isRunningProxy;
@@ -28,7 +32,11 @@ public class Main {
 
     public async Task<bool> HandleAsyncTasks() {
         await ResolverManager.GetInstance().RegisterAll();
-        GameHandler.GetInstance().ReloadGames();
+        await GameHandler.GetInstance().ReloadGames();
+        GameHandler.GetInstance().GetRegisteredGames().ForEach(game => {
+            Console.WriteLine(game.ToString());
+        } );
+        await GameHandler.GetInstance().DownloadGames();
         /*
         try {
             await File.WriteAllTextAsync(Settings.resvPath.Replace("%ENV_PROGDATA%", Environment.SpecialFolder.ApplicationData.ToString()), (await NetHandler.GetInstance().ScrapeMasterResolver()).ToString());

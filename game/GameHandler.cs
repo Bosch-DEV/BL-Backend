@@ -3,6 +3,7 @@ using LauncherBackEnd.resolver;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -28,11 +29,47 @@ public class GameHandler {
             if (!resolver.isValid) continue;
             foreach (DefaultResolver.GameResolverData item in resolver.resolverData.Values) {
                 JObject res = await NetHandler.GetInstance().ScrapeWebsiteAsyncJS(item.resvL);
-                Main.WriteLine(res.ToString());
-                RegisterGame(new Game("tests", "TEstDisplay", "Description very nice", "https://github.com/Bosch-DEV/content/bg.png", "/content/bg.png", "0.1.0", "https://github.com/Bosch-DEV/exec.exe", "/execute/Crosshair Overlay.exe", "Crosshair Overlay.exe"));
+                if(res == null) {
+                    Main.WriteLine($"Failed to pull from: {item.resvL}", ConsoleColor.Red);
+                    continue;
+                }
+                if(!res.ContainsKey("internal_name") ||
+                    !res.ContainsKey("display_name") ||
+                    !res.ContainsKey("version") ||
+                    !res.ContainsKey("description") ||
+                    !res.ContainsKey("execPath") ||
+                    !res.ContainsKey("background_img") ||
+                    !res.ContainsKey("startupFlags")) {
+                    Main.WriteLine($"Invalid Structure, Missing Keys. Report this to the Developer {item.resvL}", ConsoleColor.Red);
+                    continue;
+                }
+                _ = RegisterGame(new Game(
+                    res.GetValue("internal_name").ToString(),
+                    res.GetValue("display_name").ToString(),
+                    res.GetValue("description").ToString(),
+                    res.GetValue("background_img").ToString(),
+                    res.GetValue("version").ToString(),
+                    res.GetValue("execPath").ToString(),
+                    res.GetValue("startupFlags").ToString()
+                    ));
             }
         }
         return loadedGames;
+    }
+
+    public async Task<bool> DownloadGames() {
+        foreach (var resolver in ResolverManager.GetInstance().GetResolvers()) {
+            if (!resolver.isValid) continue;
+            foreach (DefaultResolver.GameResolverData item in resolver.resolverData.Values) {
+                try {
+                    if (GetGame(item.id) == null) continue;
+                    GetGame(item.id).Download(item.execL);
+                } catch (Exception ex) {
+                    Main.WriteLine($"{ex.Message}");
+                }
+            }
+        }
+        return true;
     }
 
     public bool IsGameRegistered(string id) {
@@ -64,6 +101,14 @@ public class GameHandler {
         loadedGames.Add(id, game);
         return game;
 
+    }
+
+    public List<Game> GetRegisteredGames() {
+        return loadedGames.Values.ToList();
+    }
+
+    public Dictionary<string, Game> GetAllRegisteredGames() {
+        return loadedGames; 
     }
 
     private string CleanID(string id) {
