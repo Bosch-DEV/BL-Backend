@@ -28,9 +28,21 @@ public abstract class Config<T>(string configName, [Optional] string configPath)
         return configData;
     }
 
-    protected void WriteConfig(T configData) {
+    public T ForceWrite(T configData) {
         string jsonText = JsonConvert.SerializeObject(configData, Formatting.Indented);
         File.WriteAllText(Path.Combine(path, name), jsonText);
+        Console.WriteLine(jsonText);
+        return configData;
+    }
+
+    protected void WriteConfig(T configData) {
+        string jsonText = JsonConvert.SerializeObject(configData, Formatting.Indented);
+        try {
+            File.WriteAllText(Path.Combine(path, name), jsonText);
+        } catch (DirectoryNotFoundException ex) {
+            Main.WriteLine($"Failed to write to directory: {Path.Combine(path, name)}", ConsoleColor.Red);
+            Main.WriteLine($"{ex.Message}", ConsoleColor.Red);
+        }
         Console.WriteLine(jsonText);
     }
 }

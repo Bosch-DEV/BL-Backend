@@ -1,6 +1,9 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
+using LauncherBackEnd.config;
+using System.Linq.Expressions;
+using Newtonsoft.Json;
 
 namespace LauncherBackEnd.net;
 
@@ -22,25 +25,44 @@ public class NetHandler {
 
     public async Task<JObject> ScrapeWebsiteAsyncJS(string uri) {
         var t = await ScrapeWebSiteAsync(uri);
-        return JObject.Parse(t);
+        try {
+            return JObject.Parse(t);
+        } catch (JsonReaderException ex) {
+            Main.WriteLine($"Failed to read scraped content: {t}", ConsoleColor.Red);
+            Main.WriteLine($"{ex.Message}", ConsoleColor.Red);
+            return null;
+        }
     }
 
     public async Task<string> ScrapeWebSiteAsync(string uri) {
         Settings settings = Main.GetInstance().Settings;
+        Main.WriteLine($"URI: {uri}");
         if (settings.uP) {
             Console.WriteLine("Enter password");
             string pass = GetPass();
-            return await (await new HttpClient(handler: new HttpClientHandler {
-                Proxy = new WebProxy {
-                    Address = new Uri(settings.pURL),
-                    BypassProxyOnLocal = false,
-                    UseDefaultCredentials = false,
-                    Credentials = new NetworkCredential(
-                    userName: settings.pN.Equals("%ENV_NAME%", StringComparison.CurrentCultureIgnoreCase) ? Environment.UserName : settings.pN,
-                    password: pass
-                )
-                }
-            }, disposeHandler: true).GetAsync(uri)).Content.ReadAsStringAsync();
+            try {
+                return await (await new HttpClient(handler: new HttpClientHandler {
+                    Proxy = new WebProxy {
+                        Address = new Uri(settings.pURL),
+                        BypassProxyOnLocal = false,
+                        UseDefaultCredentials = false,
+                        Credentials = new NetworkCredential(
+                        userName: settings.pN.Equals("%ENV_NAME%", StringComparison.CurrentCultureIgnoreCase) ? Environment.UserName : settings.pN,
+                        password: pass
+                    )
+                    }
+                }, disposeHandler: true).GetAsync(uri)).Content.ReadAsStringAsync();
+            } catch (HttpRequestException ex) {
+                Main.WriteLine($"[DEBUG] Failed to send Proxy Data to server: {settings.pURL}", ConsoleColor.Red);
+                Main.WriteLine($"[DEBUG] {ex.Message}", ConsoleColor.Red);
+                Main.WriteLine("Invalid Password, try again", ConsoleColor.Red);
+                return await ScrapeWebSiteAsync(uri);
+            } catch (InvalidOperationException ex) {
+                Main.WriteLine($"[DEBUG] Failed to send Proxy Data to server, due to invalid URI : {settings.pURL}", ConsoleColor.Red);
+                Main.WriteLine($"[DEBUG] {ex.Message}", ConsoleColor.Red);
+                Main.WriteLine("Invalid Password, try again", ConsoleColor.Red);
+                return await ScrapeWebSiteAsync(uri);
+            }
         } else {
             return await (await new HttpClient().GetAsync(uri)).Content.ReadAsStringAsync();
         }

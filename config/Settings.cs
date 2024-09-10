@@ -18,7 +18,7 @@ public class Settings {
      * The username that is passed to the proxy if enabled
      * Use %ENV_NAME% to use the user that is currently logged in
      */
-    public string pN { get; set; } = "USERNAME";
+    public string pN { get; set; } = "%ENV_NAME%";
 
     /* Proxy URL
      * The URL the Username and password get Passed to, if enabled
@@ -29,6 +29,7 @@ public class Settings {
      * This resolver Contains the Games, and where there resolver.resv + .exe is located and is pulled from 
      */
     public string resvURL { get; set; } = "https://raw.githubusercontent.com/Bosch-DEV/Battle-Launcher/master/resolver.resv";
+    public string resvPath { get; set; } = "%ENV_PROGDATA%/BattleLauncher/remote.resv";
 
     /* Fallback Resolver URL
      * Incase main resolver where to go down, this resolver, is running with a less updated version, but is far more secure and uptime should be 99.99%
@@ -40,5 +41,5 @@ public class Settings {
      * Incase you want to add your own Games, You can add to your own Local Resolver.
      * You can also get games approved for the main resolver, but that might take a bit, so it's recommeded to add it to your local while you wait
      */
-    public string lResv { get; set; } = "C:/Users/%user_name%/ProgramData/resolver.resv";
+    public string lResv { get; set; } = "%ENV_PROGDATA%/BattleLauncher/resolver.resv";
 }
